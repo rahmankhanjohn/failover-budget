@@ -54,6 +54,38 @@ Running the source version with no arguments also gives you the interactive prom
 python -c "import urllib.request;exec(urllib.request.urlopen('https://raw.githubusercontent.com/rahmankhanjohn/failover-budget/main/failover_budget.py').read())" --ttl 600
 ```
 
+## Measuring the real cache hold
+
+The third term is the one people guess. This tool measures it instead, using a minimal DNS client over UDP (still no dependencies).
+
+```
+failover-budget.exe --measure-cache www.microsoft.com
+```
+
+```
+Cache hold measurement
+==============================================================
+  Target        www.microsoft.com
+  Resolver      192.168.1.1
+  Declared TTL  12 seconds
+  Observed hold  13s
+  Cache propagation term  1s  (hold minus declared TTL)
+  Samples       5
+  Note          cache entry expired and was re-fetched
+```
+
+**How it works.** TTLs decay while an answer is cached. When the entry expires, the resolver re-fetches and the TTL jumps back up. That moment is the cache hold. Hold minus declared TTL is the propagation term the budget needs.
+
+**Pick a target with a short TTL.** The measurement has to run past the TTL to see the reset, so a 300 second record means a 5 minute wait. `www.microsoft.com` (about 12s) or `api.github.com` (about 50s) give a complete result quickly. Use a record that resembles your own traffic if you want a representative number.
+
+**Measure from the network you care about.** Run it on a client site, a VPS in your region, or against the resolver your users actually use. Your resolver is not their resolver.
+
+**Public resolvers are anycast.** 8.8.8.8 and 1.1.1.1 answer from different edges with independent cache state, so consecutive queries can look like a reset that never happened. The tool flags this. Measure against a single instance: your own router, your corporate DNS, or the ISP resolver.
+
+**Resolvers.** By default the tool uses the resolvers configured on this machine, then falls back to public ones. Force one with `--resolver 192.168.1.1` or a comma separated list.
+
+**In interactive mode** the calculator offers to measure the cache hold before computing the budget, and uses the measured value as the third term.
+
 ## Usage
 
 ```bash
