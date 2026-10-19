@@ -12,6 +12,42 @@ Most teams believe their failover takes thirty seconds because the load balancer
 
 Python 3.9+, no dependencies.
 
+## Install and run
+
+### Option 1: single file, no Python (Windows)
+
+Download `failover-budget.exe` from the releases page and run it directly.
+
+```
+failover-budget.exe --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60
+```
+
+To build it yourself from source:
+
+```
+build_windows.bat
+```
+
+### Option 2: from source
+
+```bash
+git clone https://github.com/rahmankhanjohn/failover-budget.git
+cd failover-budget
+python3 failover_budget.py --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60
+```
+
+On Windows the launcher is `py` if `python` is not on your path:
+
+```
+py failover_budget.py --ttl 600
+```
+
+### Option 3: no install, one line
+
+```
+python -c "import urllib.request;exec(urllib.request.urlopen('https://raw.githubusercontent.com/rahmankhanjohn/failover-budget/main/failover_budget.py').read())" --ttl 600
+```
+
 ## Usage
 
 ```bash
