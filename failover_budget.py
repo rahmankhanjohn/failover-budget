@@ -34,6 +34,13 @@ SAMPLE_INTERVAL_DEFAULT = 3.0
 MAX_SECONDS_DEFAULT = 120.0
 FALLBACK_RESOLVERS = ['8.8.8.8', '1.1.1.1', '9.9.9.9']
 
+# Plain words for each term. Written to be understood by anyone, in any language.
+PLAIN = {
+    'probe': 'how long until the load balancer notices',
+    'ttl': 'how long clients keep the old answer',
+    'cache': 'the part nobody measures',
+}
+
 
 def discover_resolvers():
     """Resolvers configured on this machine, plus public fallbacks."""
@@ -109,13 +116,16 @@ def render(result, probe_interval, fall_threshold, target_seconds):
     lines.append('=' * 62)
     rows = [
         ('Probe detection', '%gs interval x %d failures' % (probe_interval, fall_threshold),
-         result['probe_detection_seconds']),
-        ('Remaining TTL', 'worst case (failure right after cache fill)', result['remaining_ttl_seconds']),
-        ('Cache propagation', 'resolvers and clients beyond TTL', result['cache_propagation_seconds']),
+         result['probe_detection_seconds'], PLAIN['probe']),
+        ('Remaining TTL', 'worst case, just after a cache fill',
+         result['remaining_ttl_seconds'], PLAIN['ttl']),
+        ('Cache propagation', 'resolvers and clients beyond TTL',
+         result['cache_propagation_seconds'], PLAIN['cache']),
     ]
-    for name, note, value in rows:
+    for name, note, value, plain in rows:
         pct = (value / total * 100) if total else 0
         lines.append('  %-20s %9s  %5.1f%%   %s' % (name, human(value), pct, note))
+        lines.append('  %-40s%s' % ('', plain))
     lines.append('-' * 62)
     lines.append('  %-20s %9s   target %s' % ('User-visible recovery', human(total), human(target_seconds)))
     if verdict(total, target_seconds) == 'WITHIN_TARGET':
@@ -126,6 +136,33 @@ def render(result, probe_interval, fall_threshold, target_seconds):
     lines.append('Console timestamps measure the appliance decision.')
     lines.append('This measures what users experience.')
     return '\n'.join(lines)
+
+
+def report_line(result, probe_interval, fall_threshold, target_seconds, measured=None):
+    """One line a person can paste into a runbook, a status report or a ticket."""
+    total = result['user_visible_recovery_seconds']
+    verdict_text = ('within target' if verdict(total, target_seconds) == 'WITHIN_TARGET'
+                    else 'over target by %s' % human(total - target_seconds))
+    parts = [
+        'Failover budget: %s user-visible recovery against a %s target (%s).'
+        % (human(total), human(target_seconds), verdict_text),
+        'Breakdown: probe %s, TTL %s, cache %s.'
+        % (human(result['probe_detection_seconds']),
+           human(result['remaining_ttl_seconds']),
+           human(result['cache_propagation_seconds'])),
+    ]
+    if measured:
+        if measured.get('hold_seconds') is not None:
+            parts.append('Cache hold measured at %s on %s: %s.'
+                         % (measured['host'], measured['resolver'],
+                            human(measured['hold_seconds'])))
+        else:
+            parts.append('Cache hold measured at %s on %s: at least %s.'
+                         % (measured['host'], measured['resolver'],
+                            human(measured['authoritative_ttl'])))
+    parts.append('Calculated %s.' % time.strftime('%Y-%m-%d'))
+    parts.append('Tool: https://github.com/rahmankhanjohn/failover-budget')
+    return ' '.join(parts)
 
 
 # ---------------------------------------------------------------- minimal DNS client
@@ -367,6 +404,8 @@ def main(argv=None):
     parser.add_argument('--target', type=float, default=TARGET_DEFAULT,
                         help='recovery target in seconds (default: 60)')
     parser.add_argument('--json', action='store_true', help='machine-readable output')
+    parser.add_argument('--report', action='store_true',
+                        help='one paste-ready line for a runbook, status report or ticket')
     parser.add_argument('--measure-cache', metavar='HOST', nargs='?',
                         const=HOST_DEFAULT,
                         help='measure the real cache hold of a resolver and exit')
@@ -379,6 +418,7 @@ def main(argv=None):
                         help='give up measuring after this long (default: 120)')
     args = parser.parse_args(argv)
 
+    measured = None
     if args.measure_cache:
         try:
             measured = measure_cache_hold(args.measure_cache, args.resolver,
@@ -386,11 +426,14 @@ def main(argv=None):
         except Exception as exc:
             print('measurement failed: %s' % exc, file=sys.stderr)
             return 2
-        if args.json:
+        if args.report:
+            pass
+        elif args.json:
             print(json.dumps(measured, indent=2))
         else:
             print(render_measurement(measured))
-        return 0
+        if not args.report:
+            return 0
 
     if args.probe_interval <= 0 or args.fall_threshold < 1:
         parser.error('probe interval must be > 0 and fall threshold >= 1')
@@ -401,7 +444,10 @@ def main(argv=None):
     result['target_seconds'] = args.target
     result['verdict'] = verdict(result['user_visible_recovery_seconds'], args.target)
 
-    if args.json:
+    if args.report:
+        print(report_line(result, args.probe_interval, args.fall_threshold,
+                          args.target, measured))
+    elif args.json:
         print(json.dumps(result, indent=2))
     else:
         print(render(result, args.probe_interval, args.fall_threshold, args.target))

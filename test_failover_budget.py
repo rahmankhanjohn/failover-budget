@@ -120,6 +120,47 @@ class TestMeasureCacheHold(unittest.TestCase):
         self.assertIn('at least', m['note'])
 
 
+class TestReportLine(unittest.TestCase):
+    def test_report_line_is_one_line_with_the_numbers(self):
+        result = fb.compute_budget(5, 3, 600, 60)
+        line = fb.report_line(result, 5, 3, 60)
+        self.assertNotIn('\n', line)
+        self.assertIn('11m 15s', line)
+        self.assertIn('1m 0s', line)
+        self.assertIn('over target', line)
+        self.assertIn('github.com/rahmankhanjohn', line)
+
+    def test_report_line_within_target(self):
+        result = fb.compute_budget(5, 3, 10, 5)
+        line = fb.report_line(result, 5, 3, 60)
+        self.assertIn('within target', line)
+
+    def test_report_line_includes_measurement(self):
+        result = fb.compute_budget(5, 3, 600, 60)
+        measured = {'host': 'example.com', 'resolver': '192.168.1.1',
+                    'authoritative_ttl': 300, 'hold_seconds': 300.0, 'samples': 4}
+        line = fb.report_line(result, 5, 3, 60, measured)
+        self.assertIn('Cache hold measured', line)
+        self.assertIn('192.168.1.1', line)
+
+    def test_report_flag_output(self):
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            fb.main(['--report', '--ttl', '600', '--target', '60'])
+        out = buf.getvalue()
+        self.assertIn('Failover budget:', out)
+        self.assertIn('11m 15s', out)
+
+
+class TestPlainWords(unittest.TestCase):
+    def test_render_explains_each_term(self):
+        result = fb.compute_budget(5, 3, 600, 60)
+        text = fb.render(result, 5, 3, 60)
+        self.assertIn(fb.PLAIN['probe'], text)
+        self.assertIn(fb.PLAIN['ttl'], text)
+        self.assertIn(fb.PLAIN['cache'], text)
+
+
 class TestResolverDiscovery(unittest.TestCase):
     def test_auto_returns_a_usable_list(self):
         resolvers = fb.resolver_list('auto')
