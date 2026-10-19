@@ -92,7 +92,49 @@ def render(result, probe_interval, fall_threshold, target_seconds):
     return "\n".join(lines)
 
 
+def interactive():
+    """Double-click mode: prompt for values, show the result, wait before closing."""
+    print("=" * 62)
+    print("Failover budget calculator")
+    print("=" * 62)
+    print("Press Enter to accept the default shown in brackets.")
+    print()
+
+    def ask(label, default, cast=float):
+        try:
+            raw = input(f"{label} [{default}]: ").strip()
+            if not raw:
+                return default
+            return cast(raw)
+        except ValueError:
+            print(f"  not a number, using {default}")
+            return default
+
+    interval = ask("Health probe interval, seconds", PROBE_INTERVAL_DEFAULT)
+    fall = ask("Failures before demote", FALL_THRESHOLD_DEFAULT, int)
+    ttl = ask("DNS TTL, seconds", TTL_DEFAULT, int)
+    cache = ask("Cache propagation beyond TTL, seconds", CACHE_DEFAULT)
+    target = ask("Recovery target, seconds", TARGET_DEFAULT)
+
+    result = compute_budget(interval, fall, ttl, cache)
+    result["target_seconds"] = target
+    result["verdict"] = verdict(result["user_visible_recovery_seconds"], target)
+    print()
+    print(render(result, interval, fall, target))
+    print("Written down is measured. Remembered is a wish.")
+    print()
+    try:
+        input("Press Enter to close...")
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+
 def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+    if not argv:
+        interactive()
+        return 0
     parser = argparse.ArgumentParser(
         description="Calculate the failover budget: probe + TTL + cache = user-visible recovery."
     )

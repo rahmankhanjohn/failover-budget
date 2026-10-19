@@ -22,6 +22,10 @@ Download `failover-budget.exe` from the releases page and run it directly.
 failover-budget.exe --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60
 ```
 
+**Double-click it** and it runs in interactive mode: it asks for your probe interval, fall threshold, TTL, cache propagation and target, prints the budget, and waits for you to press Enter before closing. Nothing to type, nothing to install.
+
+**Windows may show "Windows protected your PC" or "unknown publisher".** This binary is not code signed, so Windows SmartScreen cannot verify it. Click **More info**, then **Run anyway**. To check the file before you run it, compare the SHA256 in the release notes, or run the source version below instead.
+
 To build it yourself from source:
 
 ```
@@ -41,6 +45,8 @@ On Windows the launcher is `py` if `python` is not on your path:
 ```
 py failover_budget.py --ttl 600
 ```
+
+Running the source version with no arguments also gives you the interactive prompt.
 
 ### Option 3: no install, one line
 
