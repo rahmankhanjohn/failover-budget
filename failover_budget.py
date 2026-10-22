@@ -152,9 +152,71 @@ def render(result, probe_interval, fall_threshold, target_seconds):
     else:
         lines.append('  Result: OVER TARGET by %s' % human(total - target_seconds))
     lines.append('')
+    # incidents per year at 99.9 percent
+    annual_minutes = 526
+    if total > 0:
+        incidents = int(annual_minutes * 60 / total)
+        lines.append('  At 99.9%% availability (526 min/year) this budget allows %d failovers a year.'
+                     % incidents)
+    lines.append('')
+    suggestions = build_suggestions(result, probe_interval, fall_threshold, target_seconds)
+    if suggestions:
+        lines.append('  What to change (largest lever first)')
+        for suggestion in suggestions:
+            lines.append('  - %s' % suggestion)
+        lines.append('')
     lines.append('Console timestamps measure the appliance decision.')
     lines.append('This measures what users experience.')
     return '\n'.join(lines)
+
+
+def build_suggestions(result, probe_interval, fall_threshold, target_seconds):
+    """Return a short list of actionable suggestions, largest impact first."""
+    total = result['user_visible_recovery_seconds']
+    probe = result['probe_detection_seconds']
+    ttl = result['remaining_ttl_seconds']
+    cache = result['cache_propagation_seconds']
+    suggestions = []
+    # TTL is the dominant term: show the payoff of shortening it
+    if ttl > total * 0.5 and ttl > 30:
+        for new_ttl in (60, 30):
+            if new_ttl < ttl:
+                new_total = probe + new_ttl + cache
+                suggestions.append(
+                    'TTL is %d%% of the budget. Cutting it from %ds to %ds drops recovery to %s.'
+                    ' Trade-off: more DNS query load (rate x TTL).'
+                    % (ttl / total * 100, ttl, new_ttl, human(new_total)))
+                break
+    # Probe detection is a large share: tune it
+    if probe > total * 0.15 and probe > 30:
+        new_probe = probe_interval * 2  # fall threshold 2
+        new_total = new_probe + ttl + cache
+        suggestions.append(
+            'Probe detection is %d%% of the budget. inter %gs fall %d rise %d would cut it to %s. '
+            'Trade-off: slower detection of real failures.'
+            % (probe / total * 100, probe_interval, 2, 2, human(new_total)))
+    # Cache propagation is large: measure it
+    if cache > total * 0.2:
+        suggestions.append(
+            'Cache propagation is %d%% of the budget. Run --measure-cache against your users\' '
+            'resolver to replace the guess with a number.' % (cache / total * 100))
+    # Over target by a lot: architecture change
+    if total > target_seconds * 5:
+        suggestions.append(
+            'Recovery is %.0fx your target. Shorter TTLs buy time. If the target stays below '
+            '%s, you need Anycast for the TTL term, not another config change.'
+            % (total / target_seconds, human(target_seconds)))
+    # Within target: test it
+    if total <= target_seconds:
+        suggestions.append(
+            'Budget headroom exists. Test it with a real drill before you trust it. '
+            'A number you have not drilled is a wish.')
+    # If nothing triggered, at least one
+    if not suggestions:
+        suggestions.append(
+            'Run the drill once a quarter. The number you have not measured is the one that '
+            'hides in the incident report.')
+    return suggestions
 
 
 def report_line(result, probe_interval, fall_threshold, target_seconds, measured=None):
@@ -179,6 +241,9 @@ def report_line(result, probe_interval, fall_threshold, target_seconds, measured
             parts.append('Cache hold measured at %s on %s: at least %s.'
                          % (measured['host'], measured['resolver'],
                             human(measured['authoritative_ttl'])))
+    suggestions = build_suggestions(result, probe_interval, fall_threshold, target_seconds)
+    if suggestions:
+        parts.append('Top suggestion: %s' % suggestions[0])
     parts.append('Calculated %s.' % time.strftime('%Y-%m-%d'))
     parts.append('Tool: https://github.com/rahmankhanjohn/failover-budget')
     return ' '.join(parts)
