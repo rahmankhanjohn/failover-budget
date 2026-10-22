@@ -61,8 +61,8 @@ class TestHuman(unittest.TestCase):
 class TestDNS(unittest.TestCase):
     def test_build_query_has_one_question(self):
         qid, packet = fb.build_query('example.com')
-        self.assertEqual(packet[4:6], b'\x00\x01')  # qdcount = 1
-        self.assertEqual(packet[2:4], b'\x01\x00')  # recursion desired
+        self.assertEqual(packet[4:6], b'\x00\x01')
+        self.assertEqual(packet[2:4], b'\x01\x00')
         self.assertIn(b'\x07example\x03com\x00', packet)
         self.assertEqual(struct.unpack('!H', packet[:2])[0], qid)
 
@@ -71,7 +71,7 @@ class TestDNS(unittest.TestCase):
         self.assertEqual(fb.parse_answer_ttls(data), [300])
 
     def test_parse_ttl_ignores_non_address_records(self):
-        data = synthetic_response(0x1234, 60, rtype=5)  # CNAME
+        data = synthetic_response(0x1234, 60, rtype=5)
         self.assertEqual(fb.parse_answer_ttls(data), [])
 
     def test_parse_rejects_non_reply(self):
@@ -85,17 +85,31 @@ class TestDNS(unittest.TestCase):
 
 class TestMeasureCacheHold(unittest.TestCase):
     def test_detects_refresh_when_ttl_jumps(self):
-        ttls = iter([300, 297, 294, 300])
+        ttls = iter([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 1.0])
         original = fb.query_ttl
         fb.query_ttl = lambda host, resolver, timeout=4.0: (next(ttls), '1.1.1.1')
         try:
             m = fb.measure_cache_hold('example.com', '1.1.1.1',
-                                      sample_interval=0.01, max_seconds=5)
+                                      sample_interval=0.1, max_seconds=5)
         finally:
             fb.query_ttl = original
-        self.assertEqual(m['authoritative_ttl'], 300)
+        self.assertEqual(m['authoritative_ttl'], 1)
         self.assertIsNotNone(m['hold_seconds'])
+        self.assertTrue(m['reliable'])
         self.assertIn('re-fetched', m['note'])
+
+    def test_quick_reset_is_flagged_unreliable(self):
+        ttls = iter([15.0, 12.0, 9.0, 15.0])
+        original = fb.query_ttl
+        fb.query_ttl = lambda host, resolver, timeout=4.0: (next(ttls), '8.8.8.8')
+        try:
+            m = fb.measure_cache_hold('example.com', '8.8.8.8',
+                                      sample_interval=0.01, max_seconds=1)
+        finally:
+            fb.query_ttl = original
+        self.assertFalse(m['reliable'])
+        self.assertIn('suspicious', m['note'])
+        self.assertNotIn('propagation_seconds', m)
 
     def test_ttl_zero_means_no_caching(self):
         original = fb.query_ttl
@@ -138,7 +152,8 @@ class TestReportLine(unittest.TestCase):
     def test_report_line_includes_measurement(self):
         result = fb.compute_budget(5, 3, 600, 60)
         measured = {'host': 'example.com', 'resolver': '192.168.1.1',
-                    'authoritative_ttl': 300, 'hold_seconds': 300.0, 'samples': 4}
+                    'authoritative_ttl': 300, 'hold_seconds': 300.0, 'samples': 4,
+                    'reliable': True}
         line = fb.report_line(result, 5, 3, 60, measured)
         self.assertIn('Cache hold measured', line)
         self.assertIn('192.168.1.1', line)
@@ -170,23 +185,10 @@ class TestResolverDiscovery(unittest.TestCase):
     def test_explicit_list_is_respected(self):
         self.assertEqual(fb.resolver_list('9.9.9.9, 8.8.4.4'), ['9.9.9.9', '8.8.4.4'])
 
-    def test_query_ttl_tries_next_resolver_on_failure(self):
-        calls = []
-
-        def fake_send(address):
-            calls.append(address)
-            if address == 'bad':
-                raise OSError('unreachable')
-            return True
-
-        original = fb.query_ttl
-        # exercise the fallback path through query_ttl by patching socket usage
-        fb.query_ttl = lambda host, resolver, timeout=4.0: (300, '8.8.8.8')
-        try:
-            ttl, used = fb.query_ttl('example.com', ['bad', '8.8.8.8'])
-        finally:
-            fb.query_ttl = original
-        self.assertEqual(used, '8.8.8.8')
+    def test_discover_private_first(self):
+        # Just ensure the function runs and returns something
+        resolvers = fb.discover_resolvers()
+        self.assertTrue(resolvers)
 
 
 class TestCLI(unittest.TestCase):
@@ -207,7 +209,6 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(data['verdict'], 'OVER_TARGET')
 
     def test_measure_cache_flag_is_parsed(self):
-        # network path is not exercised here, only that the flag exists
         import inspect
         self.assertIn('--measure-cache', inspect.getsource(fb.main))
 

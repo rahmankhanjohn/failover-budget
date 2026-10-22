@@ -42,8 +42,25 @@ PLAIN = {
 }
 
 
+PUBLIC_RESOLVERS = {'8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1', '9.9.9.9', '149.112.112.112',
+                     '208.67.222.222', '208.67.220.220'}
+
+
+def is_private(address):
+    """True if the address is in a private/local range (single-instance resolver)."""
+    parts = address.split('.')
+    if len(parts) != 4:
+        return False
+    try:
+        a, b, _c, _d = (int(p) for p in parts)
+    except ValueError:
+        return False
+    return (a == 10 or (a == 172 and 16 <= b <= 31) or (a == 192 and b == 168)
+            or (a == 127) or (a == 169 and b == 254))
+
+
 def discover_resolvers():
-    """Resolvers configured on this machine, plus public fallbacks."""
+    """Resolvers configured on this machine, private ones first, then public fallbacks."""
     found = []
     if sys.platform.startswith('win'):
         try:
@@ -68,10 +85,12 @@ def discover_resolvers():
                             found.append(parts[1])
         except Exception:
             pass
-    ordered = []
-    for item in found + FALLBACK_RESOLVERS:
-        if item not in ordered:
-            ordered.append(item)
+    private = [r for r in found if is_private(r)]
+    public = [r for r in found if not is_private(r)]
+    ordered = private + public
+    for fallback in FALLBACK_RESOLVERS:
+        if fallback not in ordered:
+            ordered.append(fallback)
     return ordered
 
 
@@ -257,6 +276,7 @@ def measure_cache_hold(host=HOST_DEFAULT, resolver=RESOLVER_DEFAULT,
     if first_ttl == 0:
         return {'host': host, 'resolver': used, 'authoritative_ttl': 0,
                 'hold_seconds': 0.0, 'samples': 1, 'anycast': used in PUBLIC_RESOLVERS,
+                'reliable': False,
                 'note': 'resolver returned TTL 0, this record is not being cached here'}
     samples = 1
     previous = first_ttl
@@ -272,10 +292,13 @@ def measure_cache_hold(host=HOST_DEFAULT, resolver=RESOLVER_DEFAULT,
         if ttl > previous:
             if best_reset is None:
                 best_reset = elapsed
-            # keep sampling: a real expiry produces a full TTL, an anycast
-            # artefact usually shows a partial value
-            if ttl >= first_ttl * 0.95:
                 hold = elapsed
+            # A real expiry resets to a near-full TTL after the cache aged.
+            # An anycast artefact usually resets early, before the declared
+            # TTL could possibly have elapsed. Either way, stop sampling once
+            # the first reset is seen: continuing only re-reads the same
+            # broken edge.
+            if ttl >= first_ttl * 0.95:
                 break
         else:
             previous = ttl
@@ -283,12 +306,18 @@ def measure_cache_hold(host=HOST_DEFAULT, resolver=RESOLVER_DEFAULT,
         hold = None
     if hold is None and best_reset is not None:
         hold = best_reset
+    reliable = hold is not None and hold >= first_ttl * 0.9
     result = {'host': host, 'resolver': used, 'authoritative_ttl': first_ttl,
               'hold_seconds': round(hold, 1) if hold is not None else None,
-              'samples': samples, 'anycast': used in PUBLIC_RESOLVERS}
+              'samples': samples, 'anycast': used in PUBLIC_RESOLVERS,
+              'reliable': reliable}
     if hold is None:
         result['note'] = ('no refresh observed within %.0fs, the hold is at least that long'
                           % max_seconds)
+    elif not reliable:
+        result['note'] = ('suspicious reset at %.0fs, below the declared TTL of %d. '
+                          'Likely an anycast edge change, not a real expiry'
+                          % (hold, first_ttl))
     else:
         result['note'] = 'cache entry expired and was re-fetched'
         propagation = max(0.0, hold - first_ttl)
@@ -305,18 +334,28 @@ def render_measurement(m):
     lines.append('  Declared TTL  %d seconds' % m['authoritative_ttl'])
     if m.get('hold_seconds') is None:
         lines.append('  Observed hold  at least %d seconds' % m['authoritative_ttl'])
+        lines.append('  Reliable      yes, this is a lower bound')
     else:
         lines.append('  Observed hold  %s' % human(m['hold_seconds']))
+        if m.get('reliable'):
+            lines.append('  Reliable      yes, observed hold >= declared TTL')
+        else:
+            lines.append('  Reliable      NO, observed hold is below the declared TTL')
+            lines.append('                this is an anycast artefact, not a real expiry')
     if m.get('propagation_seconds') is not None:
         lines.append('  Cache propagation term  %s  (hold minus declared TTL)'
                      % human(m['propagation_seconds']))
+    elif not m.get('reliable'):
+        lines.append('  Cache propagation term  not measured, keep your default')
     lines.append('  Samples       %d' % m['samples'])
     lines.append('  Note          %s' % m['note'])
     if m.get('anycast'):
-        lines.append('  Warning       %s is an anycast public resolver. Edges hold answers'
-                     % m['resolver'])
-        lines.append('                independently, so the observed hold can be short.')
-        lines.append('                Measure against the resolver your users really use.')
+        lines.append('')
+        lines.append('  WARNING       %s is an anycast public resolver.' % m['resolver'])
+        lines.append('                Edges hold answers independently, so the observed')
+        lines.append('                hold can be short. Measure against the resolver')
+        lines.append('                your users really use: your router, your corporate')
+        lines.append('                DNS, or your ISP resolver.')
     lines.append('')
     lines.append('Run this from the network whose users you care about.')
     lines.append('Your resolver is not their resolver.')
@@ -366,9 +405,13 @@ def interactive():
         if measured:
             print()
             print(render_measurement(measured))
-            if measured['hold_seconds']:
+            if measured.get('reliable') and measured.get('hold_seconds'):
                 cache = float(measured['hold_seconds'])
                 print('  Using the measured hold as the cache propagation term.')
+                print()
+            else:
+                print('  Measurement not reliable, keeping your cache term of %g seconds.' % cache)
+                print('  Re-run against a single-instance resolver, your router or corporate DNS.')
                 print()
 
     result = compute_budget(interval, fall, ttl, cache)

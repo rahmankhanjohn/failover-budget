@@ -78,9 +78,9 @@ Cache hold measurement
 
 **Pick a target with a short TTL.** The measurement has to run past the TTL to see the reset, so a 300 second record means a 5 minute wait. `www.microsoft.com` (about 12s) or `api.github.com` (about 50s) give a complete result quickly. Use a record that resembles your own traffic if you want a representative number.
 
-**Measure from the network you care about.** Run it on a client site, a VPS in your region, or against the resolver your users actually use. Your resolver is not their resolver.
+**The tool knows when the measurement is lying.** An anycast public resolver can return a reset that arrived before the declared TTL could possibly have elapsed. That is an edge change, not a real expiry. The tool flags it as unreliable and keeps your default cache term instead of using the bogus number. A result that says "suspicious reset at 6s, below the declared TTL of 15" is the tool doing its job.
 
-**Public resolvers are anycast.** 8.8.8.8 and 1.1.1.1 answer from different edges with independent cache state, so consecutive queries can look like a reset that never happened. The tool flags this. Measure against a single instance: your own router, your corporate DNS, or the ISP resolver.
+**Measure from the network you care about.** Run it on a client site, a VPS in your region, or against the resolver your users actually use. Your resolver is not their resolver. Public resolvers are anycast: 8.8.8.8 and 1.1.1.1 answer from different edges with independent cache state, so consecutive queries can look like a reset that never happened. Measure against a single instance, your own router, your corporate DNS, or your ISP resolver.
 
 **Resolvers.** By default the tool uses the resolvers configured on this machine, then falls back to public ones. Force one with `--resolver 192.168.1.1` or a comma separated list.
 
