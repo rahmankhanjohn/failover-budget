@@ -1,5 +1,7 @@
 # failover-budget
 
+![Tests](https://github.com/rahmankhanjohn/failover-budget/actions/workflows/test.yml/badge.svg)
+
 Measure what DNS and GSLB failover actually costs, in the only unit that matters: what your users experience.
 
 ```
