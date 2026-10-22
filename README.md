@@ -158,7 +158,7 @@ The budget you have never measured is a wish.
 
 ## Why this exists
 
-Presented at bdNOG22, Cox's Bazar, November 14, 2026 — *The Failover Budget Equation: Measuring Real DNS and GSLB Recovery Time*.
+Submitted to bdNOG22, Cox's Bazar, November 14, 2026 — *The Failover Budget Equation: Measuring Real DNS and GSLB Recovery Time*.
 
 Anycast solves the TTL half of the equation at BGP convergence speed, but it does not replace health awareness. Whatever your steering mechanism, measure the user-visible number, not the appliance one.
 
