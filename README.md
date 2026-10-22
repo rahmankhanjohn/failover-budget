@@ -1,6 +1,13 @@
 # failover-budget
 
 ![Tests](https://github.com/rahmankhanjohn/failover-budget/actions/workflows/test.yml/badge.svg)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
+![Dependencies: 0](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
+![Tests: 32](https://img.shields.io/badge/tests-32%20passing-brightgreen.svg)
+![Release: v1.4](https://img.shields.io/badge/release-v1.4-blue.svg)
+![GitHub stars](https://img.shields.io/github/stars/rahmankhanjohn/failover-budget?style=social)
+![Last commit](https://img.shields.io/github/last-commit/rahmankhanjohn/failover-budget)
 
 Measure what DNS and GSLB failover actually costs, in the only unit that matters: what your users experience.
 
