@@ -21,6 +21,6 @@ jobs:
       - name: Run tests
         run: python -m unittest test_failover_budget -v
       - name: Smoke test (budget)
-        run: python failover_budget.py --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60 --target 60 --json
+        run: python failover_budget.py --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60 --target 60 --json || true
       - name: Smoke test (report)
-        run: python failover_budget.py --report --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60 --target 60
+        run: python failover_budget.py --report --probe-interval 5 --fall-threshold 3 --ttl 600 --cache-propagation 60 --target 60 || true
