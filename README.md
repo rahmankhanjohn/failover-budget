@@ -8,6 +8,22 @@ visible recovery = probe detection + remaining TTL + cache propagation
 
 Most teams believe their failover takes thirty seconds because the load balancer console says so. The console measures the appliance decision. Users experience probe interval times failure threshold, plus worst-case remaining DNS TTL, plus resolver and client cache propagation. This tool adds the terms up.
 
+## The equation
+
+```mermaid
+flowchart LR
+    A["Probe detection<br/>15s<br/>5s interval x 3 failures"] --> B["Remaining TTL<br/>600s<br/>clients keep old answer"]
+    B --> C["Cache propagation<br/>60s<br/>resolvers + clients"]
+    C --> D["User-visible recovery<br/>11m 15s<br/>not the 15s the console reports"]
+
+    style A fill:#27ae60,stroke:#145a32,color:#ffffff
+    style B fill:#e74c3c,stroke:#922b21,color:#ffffff,stroke-width:3px
+    style C fill:#f39c12,stroke:#935116,color:#ffffff
+    style D fill:#34495e,stroke:#1c2833,color:#ffffff,stroke-width:3px
+```
+
+The TTL term dominates in most environments. That is the term that decides whether your failover is a continuity strategy or an outage with a label on it.
+
 ## Requirements
 
 Python 3.9+, no dependencies.
