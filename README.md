@@ -52,7 +52,7 @@ The runbook covers:
 - How to run the drill (5 steps)
 - Common mistakes and how to avoid them
 
-## Requirements
+## Environment sample\n\nThe diagram below shows a typical two-region GSLB setup. The failover budget equation applies to this topology.\n\nSee D_env_two_regions.png in the diagrams folder for the full visual.\n\n## Requirements
 
 Python 3.9+, no dependencies.
 
