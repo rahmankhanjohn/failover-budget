@@ -33,6 +33,25 @@ flowchart LR
 
 The TTL term dominates in most environments. That is the term that decides whether your failover is a continuity strategy or an outage with a label on it.
 
+## Operator runbook
+
+The tool includes a built-in operator runbook with step-by-step commands:
+
+`ash
+failover-budget --runbook     # full step-by-step guide with dig, curl, tcpdump, HAProxy
+failover-budget --diagnose    # symptom-based decision tree for a failing failover
+`
+
+The runbook covers:
+- What DNS is actually returning (dig)
+- What the resolver thinks the TTL is (dig @resolver)
+- Whether the application is responding (curl)
+- Whether traffic is flowing (tcpdump)
+- Whether the health check is lying (HAProxy logs)
+- How to calculate the budget (failover-budget)
+- How to run the drill (5 steps)
+- Common mistakes and how to avoid them
+
 ## Requirements
 
 Python 3.9+, no dependencies.

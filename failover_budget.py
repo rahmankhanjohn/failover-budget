@@ -524,7 +524,19 @@ def main(argv=None):
                         help='seconds between probes during measurement (default: 3)')
     parser.add_argument('--max-seconds', type=float, default=MAX_SECONDS_DEFAULT,
                         help='give up measuring after this long (default: 120)')
+    parser.add_argument('--runbook', action='store_true',
+                        help='print the operator runbook with step-by-step commands')
+    parser.add_argument('--diagnose', action='store_true',
+                        help='print the diagnostic decision tree for a failing failover')
     args = parser.parse_args(argv)
+    if args.runbook:
+        import runbook as _rb
+        _rb.render_runbook()
+        return 0
+    if args.diagnose:
+        import runbook as _rb
+        _rb.render_diagnose()
+        return 0
 
     measured = None
     if args.measure_cache:

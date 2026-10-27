@@ -222,5 +222,23 @@ class TestScriptRun(unittest.TestCase):
         self.assertEqual(proc.returncode, 1)
 
 
+
+class TestRunbook(unittest.TestCase):
+    def test_runbook_flag(self):
+        import subprocess, sys
+        result = subprocess.run([sys.executable, 'failover_budget.py', '--runbook'],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('OPERATOR RUNBOOK', result.stdout)
+        self.assertIn('dig example.com', result.stdout)
+
+    def test_diagnose_flag(self):
+        import subprocess, sys
+        result = subprocess.run([sys.executable, 'failover_budget.py', '--diagnose'],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('DIAGNOSTIC GUIDE', result.stdout)
+        self.assertIn('curl -I', result.stdout)
+
 if __name__ == '__main__':
     unittest.main()
