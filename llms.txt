@@ -1,0 +1,54 @@
+# failover-budget
+
+Measure what DNS and GSLB failover actually costs, in the only unit that matters: what your users experience.
+
+## What it does
+
+Calculates user-visible recovery time from three terms:
+- probe_detection = probe_interval x fall_threshold (when the LB notices)
+- remaining_ttl = worst case, failure right after a resolver cached (full TTL)
+- cache_propagation = resolver and client caches beyond TTL expiry
+
+Also measures real DNS cache hold of a resolver using a minimal UDP DNS client (no dependencies).
+
+## Key files
+
+- failover_budget.py: main CLI tool, argparse, budget calculation, cache measurement, interactive mode
+- runbook.py: operator runbook (7 steps) and diagnostic decision tree
+- test_failover_budget.py: 34 tests
+
+## CLI flags
+
+- --probe-interval FLOAT: health probe interval in seconds (default: 5)
+- --fall-threshold INT: consecutive failures before demote (default: 3)
+- --ttl INT: DNS TTL in seconds (default: 300)
+- --cache-propagation FLOAT: resolver/client cache beyond TTL (default: 60)
+- --target FLOAT: recovery target in seconds (default: 60)
+- --json: machine-readable output
+- --report: one paste-ready line for runbook/status report
+- --measure-cache HOST: measure real cache hold of a resolver
+- --resolver IP: resolver to measure (default: auto)
+- --runbook: print operator runbook with step-by-step commands
+- --diagnose: print diagnostic decision tree
+- (no args): interactive mode
+
+## Exit codes
+
+- 0: within target
+- 1: over target
+- 2: error (bad path, etc.)
+
+## Design patterns
+
+- Zero dependencies (stdlib only)
+- Single file (failover_budget.py)
+- MIT license
+- --report mode for paste-ready output
+- Plain-word explanations for every term
+- Exit code 0/1 for CI integration
+
+## Related
+
+- bdNOG22 presentation: "The Failover Budget Equation" (Nov 14, 2026, Cox's Bazar)
+- Article 16: "GSLB: The Failover Budget" (LinkedIn)
+- XERJ Corpus Hub: selected for reference code index

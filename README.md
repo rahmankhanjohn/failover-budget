@@ -197,6 +197,11 @@ Anycast solves the TTL half of the equation at BGP convergence speed, but it doe
 python3 -m unittest test_failover_budget -v
 ```
 
+## Recognition
+
+Selected for the [XERJ Corpus Hub](https://github.com/xerj-org/xerj) — an open index of reference code solutions that AI coding agents consult before writing their own. The runbook and diagnostic additions (commit f153c59) were indexed as a worked reference for DNS and GSLB failover diagnosis.
+
 ## License
+
 
 MIT
