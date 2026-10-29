@@ -46,10 +46,10 @@ The complete drill procedure with exact commands, expected outputs, and a log te
 
 The tool includes a built-in operator runbook with step-by-step commands:
 
-`ash
+```bash
 failover-budget --runbook     # full step-by-step guide with dig, curl, tcpdump, HAProxy
 failover-budget --diagnose    # symptom-based decision tree for a failing failover
-`
+```
 
 The runbook covers:
 - What DNS is actually returning (dig)
