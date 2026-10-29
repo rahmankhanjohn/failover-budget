@@ -35,6 +35,13 @@ flowchart LR
 
 The TTL term dominates in most environments. That is the term that decides whether your failover is a continuity strategy or an outage with a label on it.
 
+## The fifteen minute drill
+
+The complete drill procedure with exact commands, expected outputs, and a log template:
+
+- [docs/drill.md](docs/drill.md) - what to run, what to record, how to read the result
+- [docs/drill-log-template.csv](docs/drill-log-template.csv) - one row per drill, compare across quarters
+
 ## Operator runbook
 
 The tool includes a built-in operator runbook with step-by-step commands:

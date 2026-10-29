@@ -1,0 +1,4 @@
+date,service,probe_interval_s,fall_threshold,ttl_s,cache_propagation_s,probe_detection_s,remaining_ttl_s,cache_prop_observed_s,user_visible_recovery,target_s,verdict,notes
+2026-11-15,checkout-api,5,3,600,60,15,600,60,11m15s,1m0s,OVER 10m15s,"first drill; TTL dominates; shortlist record for TTL cut"
+2027-02-15,checkout-api,5,3,60,45,15,60,45,2m0s,1m0s,OVER 1m0s,"TTL cut landed; cache term now co-dominant; two resolvers ignoring TTL flagged"
+2027-05-15,checkout-api,3,3,60,20,9,60,20,1m29s,1m0s,OVER 29s,"anycast evaluated for the remaining gap"
