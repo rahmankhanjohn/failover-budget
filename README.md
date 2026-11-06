@@ -3,7 +3,7 @@
 ![Tests](https://github.com/rahmankhanjohn/failover-budget/actions/workflows/test.yml/badge.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/rahmankhanjohn/badge.svg)
-![Setup manual](https://gitmanual.com/rahmankhanjohn/failover-budget/badge.svg)
+[![Setup manual](https://gitmanual.com/rahmankhanjohn/failover-budget/badge.svg)](https://gitmanual.com/rahmankhanjohn/failover-budget)
 
 ![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)
 ![Dependencies: 0](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
