@@ -149,12 +149,19 @@ $ python3 failover_budget.py --probe-interval 5 --fall-threshold 3 --ttl 600 --c
 ```
 Failover budget
 ==============================================================
-  Probe detection        15s    2.0%   5s interval x 3 failures
-  Remaining TTL      14m 40s   78.4%   worst case (failure right after cache fill)
-  Cache propagation      1m    17.6%   resolvers and clients beyond TTL
+  Probe detection            15s    2.2%   5s interval x 3 failures
+  Remaining TTL           10m 0s   88.9%   worst case, just after a cache fill
+  Cache propagation        1m 0s    8.9%   resolvers and clients beyond TTL
 --------------------------------------------------------------
-  User-visible recovery  15m 55s   target 1m 0s
-  Result: OVER TARGET by 14m 55s
+  User-visible recovery   11m 15s   target 1m 0s
+  Result: OVER TARGET by 10m 15s
+
+  At 99.9% availability (526 min/year) this budget allows 46 failovers a year.
+
+  What to change (largest lever first)
+  - TTL is 88% of the budget. Cutting it from 600s to 60s drops recovery to 2m 15s. Trade-off: more DNS query load (rate x TTL).
+  - Recovery is 11x your target. Shorter TTLs buy time. If the target stays below 1m 0s, you need Anycast for the TTL term, not another config change.
+
 Console timestamps measure the appliance decision.
 This measures what users experience.
 ```
