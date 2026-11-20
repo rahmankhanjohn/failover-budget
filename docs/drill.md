@@ -108,6 +108,16 @@ One line in the drill log (template below). One page per drill. Compare across q
 | T3-T2 long after DNS flipped | probe_detection or app | Check LB demote time in logs; verify shallow health check |
 | Flip never happened | not a DNS problem | Health check never demoted: loosen fall threshold or fix probe target |
 
+## What your recovery number means for your SLO
+
+99.9% availability allows 526 minutes of downtime per year. Divide that by your measured user-visible recovery time (T3 minus T0) to find how many failovers you can afford:
+
+- 2m 16s recovery → about 84 failovers per year (one every 4-5 days)
+- 11m 15s recovery → about 46 failovers per year
+- 1m 29s recovery → about 407 failovers per year
+
+Cutting TTL — usually the largest term — shrinks recovery and raises the number of failovers your budget can absorb. This turns an abstract SLO ("99.9%") into a concrete operational limit you can track drill by drill.
+
 ## Restore
 
 Bring the primary back, verify `dig` returns it, verify client 200s, close the window. Keep the logs with the drill row.
