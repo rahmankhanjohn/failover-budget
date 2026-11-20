@@ -237,4 +237,14 @@ MIT
 - Dashboards — swap the appliance number for t3 minus t0
 - CI pipelines — exit codes 0 (within target), 1 (over target), 2 (bad input) gate deploys
 
+## What this means for your SLO
+
+99.9% availability allows 526 minutes of downtime per year. Divide that by your measured user-visible recovery time to find how many failovers you can afford:
+
+- 2m 16s recovery → about 84 failovers per year (one every 4-5 days)
+- 11m 15s recovery → about 46 failovers per year
+- 1m 29s recovery → about 407 failovers per year
+
+Cutting TTL — usually the largest term — shrinks recovery and raises the number of failovers your budget can absorb. This turns an abstract SLO ("99.9%") into a concrete operational limit you can track drill by drill.
+
 No telemetry in this tool. If you use it, plan to, or rejected it, tell us your environment in [the discussion thread](https://github.com/rahmankhanjohn/failover-budget/discussions/1). Operator and developer replies steer the roadmap.
