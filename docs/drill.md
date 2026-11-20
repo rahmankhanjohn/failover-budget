@@ -18,6 +18,12 @@ Run this quarterly. It produces the one number your runbook is missing: how long
 dig +noall +answer yourapp.example.com
 ```
 
+Windows PowerShell:
+
+```
+Resolve-DnsName yourapp.example.com
+```
+
 Expected: the primary IP with your configured TTL. Write down the TTL and the answer.
 
 ```
@@ -73,6 +79,12 @@ while true; do
 done | tee client-success.log
 ```
 
+Windows PowerShell:
+
+```
+while ($true) { $code = (Invoke-WebRequest -Uri https://yourapp.example.com -Method Head -ErrorAction SilentlyContinue).StatusCode; "$(Get-Date -Format HH:mm:ss) $code"; if ($code -eq 200) { break }; Start-Sleep 1 } | Tee-Object client-success.log
+```
+
 The first 200 is `T3`. **T3 minus T0 is your user-visible recovery. This is the number.**
 
 ### 6. Compute the budget and compare
@@ -99,3 +111,9 @@ One line in the drill log (template below). One page per drill. Compare across q
 ## Restore
 
 Bring the primary back, verify `dig` returns it, verify client 200s, close the window. Keep the logs with the drill row.
+
+Windows PowerShell restore check:
+
+```
+Resolve-DnsName yourapp.example.com
+```

@@ -204,9 +204,11 @@ The budget you have never measured is a wish.
 
 ## Why this exists
 
-Submitted to bdNOG22, Cox's Bazar, 11-14 November 2026 — *The Failover Budget Equation: Measuring Real DNS and GSLB Recovery Time*.
+Submitted to bdNOG22, Cox's Bazar, 11-14 November 2026 — *The Failover Budget Equation: Measuring Real DNS and GSLB Recovery Time*. Also submitted to the CNCF Bangladesh meetup, 21 November 2026 — *The Failover Budget: How long do your users actually wait?*.
 
-Anycast solves the TTL half of the equation at BGP convergence speed, but it does not replace health awareness. Whatever your steering mechanism, measure the user-visible number, not the appliance one.
+For operators: anycast solves the TTL half of the equation at BGP convergence speed, but it does not replace health awareness. Whatever your steering mechanism, measure the user-visible number, not the appliance one.
+
+For developers: you own the service and you are on call. CNCF cloud native stacks still leave DNS and caching as the blind spot between your observability tools and what users actually experience after failover. This tool gives you a single number — real user-visible recovery — that you can measure on your laptop and track across quarters.
 
 ## Tests
 
