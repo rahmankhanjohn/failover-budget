@@ -247,4 +247,16 @@ MIT
 
 Cutting TTL — usually the largest term — shrinks recovery and raises the number of failovers your budget can absorb. This turns an abstract SLO ("99.9%") into a concrete operational limit you can track drill by drill.
 
+## SRE concepts behind the failover budget
+
+**SLI (Service Level Indicator):** user-visible recovery time — `t3 minus t0`, how long your users actually wait after a failover.
+
+**SLO (Service Level Objective):** your internal reliability target, e.g. 99.9% availability. This is what your engineering team aims for.
+
+**SLA (Service Level Agreement):** an external contract with customers, often with penalties if missed. Your SLO should be stricter than your SLA so you have margin.
+
+**Error budget:** the allowable unreliability derived from your SLO. 99.9% availability leaves 0.1% (526 minutes per year) of error budget. If you burn through it, you pause feature work to fix reliability.
+
+**How the failover budget maps to SRE:** your measured user-visible recovery is the SLI. Your availability target is the SLO. The number of failovers you can afford per year is your error budget in practice. The drill measures the SLI; the log tracks the trend against the SLO.
+
 No telemetry in this tool. If you use it, plan to, or rejected it, tell us your environment in [the discussion thread](https://github.com/rahmankhanjohn/failover-budget/discussions/1). Operator and developer replies steer the roadmap.
