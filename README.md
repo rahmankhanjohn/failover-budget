@@ -227,4 +227,14 @@ MIT
 
 ## Who is this for?
 
-No telemetry in this tool. If you use it, plan to, or rejected it, tell us your environment in [the discussion thread](https://github.com/rahmankhanjohn/failover-budget/discussions/1). Operator replies steer the roadmap.
+**For operators:** you measure real user-visible recovery instead of trusting the dashboard. The drill becomes a repeatable runbook step; the number (t3 minus t0) goes into on-call playbooks and dashboards.
+
+**For developers:** you own the service and you are on call. CNCF cloud native stacks still leave DNS and caching as the blind spot between your observability tools and what users actually experience after failover. You can run the whole drill on your laptop with no production access.
+
+**Tools and processes it adds value to:**
+- Runbooks — the fifteen-minute drill becomes a repeatable quarterly step
+- On-call playbooks — one number (real user-visible recovery) to page on
+- Dashboards — swap the appliance number for t3 minus t0
+- CI pipelines — exit codes 0 (within target), 1 (over target), 2 (bad input) gate deploys
+
+No telemetry in this tool. If you use it, plan to, or rejected it, tell us your environment in [the discussion thread](https://github.com/rahmankhanjohn/failover-budget/discussions/1). Operator and developer replies steer the roadmap.
