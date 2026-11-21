@@ -29,7 +29,7 @@ TTL_DEFAULT = 300
 CACHE_DEFAULT = 60
 TARGET_DEFAULT = 60
 RESOLVER_DEFAULT = 'auto'
-HOST_DEFAULT = 'example.com'
+HOST_DEFAULT = 'yourapp.example.com'
 SAMPLE_INTERVAL_DEFAULT = 3.0
 MAX_SECONDS_DEFAULT = 120.0
 FALLBACK_RESOLVERS = ['8.8.8.8', '1.1.1.1', '9.9.9.9']
@@ -37,7 +37,7 @@ FALLBACK_RESOLVERS = ['8.8.8.8', '1.1.1.1', '9.9.9.9']
 # Plain words for each term. Written to be understood by anyone, in any language.
 PLAIN = {
     'probe': 'how long until the load balancer notices',
-    'ttl': 'how long clients keep the old answer',
+    'ttl': 'how long clients keep the old address',
     'cache': 'the part nobody measures',
 }
 
@@ -134,11 +134,11 @@ def render(result, probe_interval, fall_threshold, target_seconds):
     lines.append('Failover budget')
     lines.append('=' * 62)
     rows = [
-        ('Probe detection', '%gs interval x %d failures' % (probe_interval, fall_threshold),
+        ('Detection', '%gs interval x %d failures' % (probe_interval, fall_threshold),
          result['probe_detection_seconds'], PLAIN['probe']),
-        ('Remaining TTL', 'worst case, just after a cache fill',
+        ('Address memory', 'worst case, just after a cache fill',
          result['remaining_ttl_seconds'], PLAIN['ttl']),
-        ('Cache propagation', 'resolvers and clients beyond TTL',
+        ('Cache holdover', 'resolvers and clients beyond TTL',
          result['cache_propagation_seconds'], PLAIN['cache']),
     ]
     for name, note, value, plain in rows:
@@ -183,7 +183,7 @@ def build_suggestions(result, probe_interval, fall_threshold, target_seconds):
             if new_ttl < ttl:
                 new_total = probe + new_ttl + cache
                 suggestions.append(
-                    'TTL is %d%% of the budget. Cutting it from %ds to %ds drops recovery to %s.'
+                    'Address memory is %d%% of the budget. Cutting it from %ds to %ds drops recovery to %s.'
                     ' Trade-off: more DNS query load (rate x TTL).'
                     % (ttl / total * 100, ttl, new_ttl, human(new_total)))
                 break
@@ -192,13 +192,13 @@ def build_suggestions(result, probe_interval, fall_threshold, target_seconds):
         new_probe = probe_interval * 2  # fall threshold 2
         new_total = new_probe + ttl + cache
         suggestions.append(
-            'Probe detection is %d%% of the budget. inter %gs fall %d rise %d would cut it to %s. '
+            'Detection is %d%% of the budget. inter %gs fall %d rise %d would cut it to %s. '
             'Trade-off: slower detection of real failures.'
             % (probe / total * 100, probe_interval, 2, 2, human(new_total)))
     # Cache propagation is large: measure it
     if cache > total * 0.2:
         suggestions.append(
-            'Cache propagation is %d%% of the budget. Run --measure-cache against your users\' '
+            'Cache holdover is %d%% of the budget. Run --measure-cache against your users\' '
             'resolver to replace the guess with a number.' % (cache / total * 100))
     # Over target by a lot: architecture change
     if total > target_seconds * 5:
@@ -227,7 +227,7 @@ def report_line(result, probe_interval, fall_threshold, target_seconds, measured
     parts = [
         'Failover budget: %s user-visible recovery against a %s target (%s).'
         % (human(total), human(target_seconds), verdict_text),
-        'Breakdown: probe %s, TTL %s, cache %s.'
+        'Breakdown: probe %s, address memory %s, cache holdover %s.'
         % (human(result['probe_detection_seconds']),
            human(result['remaining_ttl_seconds']),
            human(result['cache_propagation_seconds'])),
