@@ -241,7 +241,7 @@ MIT
 
 99.9% availability allows 526 minutes of downtime per year. Divide that by your measured user-visible recovery time to find how many failovers you can afford:
 
-- 1m 16s recovery → about 232 failovers per year (one every 38 hours)
+- 1m 16s recovery → about 415 failovers per year (one every 21 hours)
 - 11m 15s recovery → about 46 failovers per year
 - 1m 29s recovery → about 355 failovers per year
 
