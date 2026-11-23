@@ -241,9 +241,9 @@ MIT
 
 99.9% availability allows 526 minutes of downtime per year. Divide that by your measured user-visible recovery time to find how many failovers you can afford:
 
-- 2m 16s recovery → about 84 failovers per year (one every 4-5 days)
+- 1m 16s recovery → about 232 failovers per year (one every 38 hours)
 - 11m 15s recovery → about 46 failovers per year
-- 1m 29s recovery → about 407 failovers per year
+- 1m 29s recovery → about 355 failovers per year
 
 Cutting TTL — usually the largest term — shrinks recovery and raises the number of failovers your budget can absorb. This turns an abstract SLO ("99.9%") into a concrete operational limit you can track drill by drill.
 
